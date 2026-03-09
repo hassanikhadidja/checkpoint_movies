@@ -11,6 +11,7 @@ function MovieList({ movies, onDelete, onEdit }) {
         <MovieCard
           key={index}
           movie={movie}
+          index={index}                      // ← important!
           onDelete={onDelete}
           onEdit={onEdit}
         />

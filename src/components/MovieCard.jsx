@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Rating } from 'react-simple-star-rating';   // ← add this import
+import { useNavigate } from 'react-router-dom';
+import { Rating } from 'react-simple-star-rating';
 
-function MovieCard({ movie, onDelete, onEdit }) {
+function MovieCard({ movie, index, onDelete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedMovie, setEditedMovie] = useState({ ...movie });
+  const navigate = useNavigate();
 
   if (!movie || !movie.title) {
     return (
@@ -18,11 +20,11 @@ function MovieCard({ movie, onDelete, onEdit }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditedMovie(prev => ({ ...prev, [name]: value }));
+    setEditedMovie((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = () => {
-    if (!editedMovie.title.trim() || !editedMovie.rating) {
+    if (!editedMovie.title.trim() || editedMovie.rating === undefined) {
       alert("Title and rating are required!");
       return;
     }
@@ -33,9 +35,15 @@ function MovieCard({ movie, onDelete, onEdit }) {
     setIsEditing(false);
   };
 
+  const handleCardClick = () => {
+    if (!isEditing) {
+      navigate(`/movie/${index}`);
+    }
+  };
+
   if (isEditing) {
     return (
-      <div className="movie-card">
+      <div className="movie-card editing">
         <div className="movie-info">
           <h3>Edit Movie</h3>
 
@@ -47,7 +55,7 @@ function MovieCard({ movie, onDelete, onEdit }) {
           />
           <textarea
             name="description"
-            value={editedMovie.description}
+            value={editedMovie.description || ''}
             onChange={handleChange}
             placeholder="Description"
           />
@@ -57,15 +65,20 @@ function MovieCard({ movie, onDelete, onEdit }) {
             onChange={handleChange}
             placeholder="Poster URL"
           />
+          <input
+            name="trailerLink"
+            value={editedMovie.trailerLink || ''}
+            onChange={handleChange}
+            placeholder="Trailer embed URL[](https://www.youtube.com/embed/...)"
+          />
 
-          {/* Interactive rating during edit */}
           <div style={{ margin: '12px 0' }}>
             <label>Rating (0–10):</label>
             <Rating
-              onClick={(newRating) => setEditedMovie(prev => ({ ...prev, rating: newRating }))}
-              initialValue={editedMovie.rating}
-              ratingValue={10}          // ← scale 0–10
-              allowFraction={true}      // allow 8.5, 7.7 etc.
+              onClick={(newRating) => setEditedMovie((prev) => ({ ...prev, rating: newRating }))}
+              initialValue={editedMovie.rating || 0}
+              ratingValue={10}
+              allowFraction={true}
               size={28}
               fillColor="#c2185b"
               emptyColor="#e0e0e0"
@@ -75,7 +88,9 @@ function MovieCard({ movie, onDelete, onEdit }) {
 
           <div className="card-actions">
             <button className="btn-edit" onClick={handleSave}>Save</button>
-            <button className="btn-delete" onClick={() => setIsEditing(false)}>Cancel</button>
+            <button className="btn-delete" onClick={() => setIsEditing(false)}>
+              Cancel
+            </button>
           </div>
         </div>
       </div>
@@ -83,7 +98,7 @@ function MovieCard({ movie, onDelete, onEdit }) {
   }
 
   return (
-    <div className="movie-card">
+    <div className="movie-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       <img
         src={movie.posterURL}
         alt={movie.title}
@@ -95,8 +110,7 @@ function MovieCard({ movie, onDelete, onEdit }) {
       <div className="movie-info">
         <h3>{movie.title}</h3>
 
-        {/* Read-only stars instead of text */}
-        <div className="rating-stars" style={{ margin: '8px 0' }}>
+        <div className="rating-stars">
           <Rating
             initialValue={movie.rating}
             ratingValue={10}
@@ -106,17 +120,35 @@ function MovieCard({ movie, onDelete, onEdit }) {
             fillColor="#c2185b"
             emptyColor="#e0e0e0"
           />
-          <span style={{ marginLeft: '8px', fontSize: '0.9rem', color: '#555' }}>
-            {movie.rating.toFixed(1)}
-          </span>
+          <span className="rating-number">({movie.rating.toFixed(1)})</span>
         </div>
 
-        <p className="description">{movie.description || 'No description'}</p>
+        <p className="description">
+          {movie.description
+            ? movie.description.substring(0, 90) + (movie.description.length > 90 ? '...' : '')
+            : 'No description'}
+        </p>
       </div>
 
       <div className="card-actions">
-        <button className="btn-edit" onClick={() => setIsEditing(true)}>Edit</button>
-        <button className="btn-delete" onClick={() => onDelete(movie)}>Delete</button>
+        <button
+          className="btn-edit"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsEditing(true);
+          }}
+        >
+          Edit
+        </button>
+        <button
+          className="btn-delete"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(movie);
+          }}
+        >
+          Delete
+        </button>
       </div>
     </div>
   );
